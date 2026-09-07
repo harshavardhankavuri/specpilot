@@ -1,4 +1,4 @@
-# apitest-framework
+# @assertquest/specpilot
 
 Contract-first, generic API test framework on Playwright. The OpenAPI spec is the
 source of truth: scenarios reference operations by `operationId`, not hand-typed
@@ -187,7 +187,7 @@ This describes any apitest project (whether scaffolded by `create-apitest` or on
 
 In this repo specifically:
 
-- `runtime/scenario.spec.ts` — the one generic Playwright spec file every project's `playwright.config.ts` points `testDir` at (resolved via the `apitest-framework/runtime/scenario.spec.ts` package export); it interprets scenario data and is never generated or hand-edited per API.
+- `runtime/scenario.spec.ts` — the one generic Playwright spec file every project's `playwright.config.ts` points `testDir` at (resolved via the `@assertquest/specpilot/runtime/scenario.spec.ts` package export); it interprets scenario data and is never generated or hand-edited per API.
 - `src/` — spec loader, scenario schema, interpreter, auth strategies, db adapters, CLI.
 - `examples/` — worked example projects, see [Examples](#examples).
 
@@ -310,5 +310,5 @@ sequenceDiagram
   Postgres containers in this environment.
 - `apitest init`'s oauth2/openIdConnect handling stubs a `bearer-login` role with a guessed or TODO login path — it
   is intentionally not auto-configured end to end, per the design brief.
-- No version of `apitest-framework` is published to npm yet — `examples/assertquest/package.json` depends on it via
+- No version of `@assertquest/specpilot` is published to npm yet — `examples/assertquest/package.json` depends on it via
   `file:../..` for local development. A published consumer would use a real semver range instead.

@@ -1,4 +1,4 @@
-import type { CustomStep } from "apitest-framework/types/customStep";
+import type { CustomStep } from "@assertquest/specpilot/types/customStep";
 
 /**
  * Setup: computes test-run-unique data before the flow starts. Anything written

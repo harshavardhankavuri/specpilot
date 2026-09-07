@@ -1,4 +1,4 @@
-import type { CustomStep } from "apitest-framework/types/customStep";
+import type { CustomStep } from "@assertquest/specpilot/types/customStep";
 
 /**
  * Setup: grabs a real vehicleId/driverId to assign, so the race step below doesn't

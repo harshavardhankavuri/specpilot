@@ -36,7 +36,7 @@ recursive) — a duplicate name means whichever file loads last silently wins, w
 ## Writing the file
 
 - New file or an existing one under `customSteps/` — file name doesn't matter, only the export name.
-- Import the type: `import type { CustomStep } from "apitest-framework/types/customStep";`
+- Import the type: `import type { CustomStep } from "@assertquest/specpilot/types/customStep";`
 - `ctx: StepContext` gives you: `request` (unauthenticated), `roleRequest(role)` (authenticated,
   same resolution as a declarative `auth:`), `spec` (Map of operationId → descriptor, rarely
   needed — prefer a normal `operation:` step before/after instead of hand-building a request),

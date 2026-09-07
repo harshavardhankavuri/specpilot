@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "Worked apitest-framework example against the SwiftCargo API (https://assertquest.com/docs/json)",
+  "description": "Worked @assertquest/specpilot example against the SwiftCargo API (https://assertquest.com/docs/json)",
   "scripts": {
     "apitest:sync": "apitest sync",
     "apitest:check": "apitest check",
@@ -11,7 +11,7 @@
     "apitest:drift": "apitest drift"
   },
   "dependencies": {
-    "apitest-framework": "file:../.."
+    "@assertquest/specpilot": "file:../.."
   },
   "devDependencies": {
     "@playwright/test": "^1.47.0",

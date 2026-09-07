@@ -1,4 +1,4 @@
-import type { CustomStep } from "apitest-framework/types/customStep";
+import type { CustomStep } from "@assertquest/specpilot/types/customStep";
 
 /**
  * Fires two identical POST /api/booking requests concurrently and checks the API

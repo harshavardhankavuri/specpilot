@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const env = process.env.APITEST_ENV ?? "dev";
 dotenv.config({ path: path.join("environments", `${env}.env`) });
 
-// The one generic spec file lives in the apitest-framework package, not this project.
-const specFile = fileURLToPath(import.meta.resolve("apitest-framework/runtime/scenario.spec.ts"));
+// The one generic spec file lives in the @assertquest/specpilot package, not this project.
+const specFile = fileURLToPath(import.meta.resolve("@assertquest/specpilot/runtime/scenario.spec.ts"));
 
 export default defineConfig({
   testDir: path.dirname(specFile),

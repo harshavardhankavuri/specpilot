@@ -1,9 +1,38 @@
 {
-  "name": "apitest-framework",
+  "name": "@assertquest/specpilot",
   "version": "0.1.0",
-  "description": "Contract-first, generic API test framework on Playwright (OpenAPI-driven, SQL Server / Postgres support)",
+  "description": "Contract-first API test framework on Playwright: scenarios reference OpenAPI operationIds, get automatic status/schema checks, and support SQL Server / Postgres assertions.",
+  "keywords": [
+    "openapi",
+    "swagger",
+    "api-testing",
+    "contract-testing",
+    "playwright",
+    "test-framework",
+    "rest-api",
+    "e2e-testing",
+    "integration-testing",
+    "yaml",
+    "cli",
+    "postgres",
+    "sql-server",
+    "schema-validation",
+    "test-automation"
+  ],
+  "homepage": "https://github.com/harshavardhankavuri/specpilot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harshavardhankavuri/specpilot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/harshavardhankavuri/specpilot/issues"
+  },
+  "author": "Harshavardhan Chowdary K",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.6.0"
+  },
   "bin": {
     "apitest": "bin/apitest.js",
     "create-apitest": "bin/create-apitest.js"
@@ -17,7 +46,8 @@
   "files": [
     "bin",
     "runtime",
-    "src"
+    "src",
+    "!src/db/types"
   ],
   "scripts": {
     "cli": "tsx src/cli/index.ts",
@@ -49,6 +79,7 @@
     }
   },
   "devDependencies": {
+    "@playwright/test": "^1.47.0",
     "@types/mssql": "^9.1.5",
     "@types/node": "^22.7.4",
     "@types/pg": "^8.11.10",

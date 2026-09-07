@@ -52,10 +52,10 @@ export async function runTests(options: RunOptions): Promise<number> {
   const env: NodeJS.ProcessEnv = { ...process.env, APITEST_ENV: options.env ?? "dev" };
   if (options.dryRun) env.APITEST_DRY_RUN = "true";
   // Node refuses to strip types from .ts files under node_modules, but runtime/scenario.spec.ts
-  // lives there once apitest-framework is an installed dependency — register tsx for this
+  // lives there once @assertquest/specpilot is an installed dependency — register tsx for this
   // subprocess (bin/apitest.js only registers it for the CLI process itself) so Playwright's
   // own native TS loader never has to touch that file.
-  // apitest-framework is typically linked via a symlink (npm `file:` dependency). Without
+  // @assertquest/specpilot is typically linked via a symlink (npm `file:` dependency). Without
   // --preserve-symlinks, Node resolves modules against the symlink's realpath, which would
   // reach for a physical @playwright/test install alongside the framework's own source instead
   // of the consuming project's copy — tripping Playwright's "second require" guard.

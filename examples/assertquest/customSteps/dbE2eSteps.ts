@@ -1,4 +1,4 @@
-import type { CustomStep } from "apitest-framework/types/customStep";
+import type { CustomStep } from "@assertquest/specpilot/types/customStep";
 import { getShipmentById } from "../queries/index.js";
 
 /**

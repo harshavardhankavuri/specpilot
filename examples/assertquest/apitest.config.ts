@@ -1,4 +1,4 @@
-/** @type {import("apitest-framework/config").ApiTestConfig} */
+/** @type {import("@assertquest/specpilot/config").ApiTestConfig} */
 export default {
   spec: "https://assertquest.com/docs/json",
   baseUrlVar: "BASE_URL",

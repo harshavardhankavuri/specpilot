@@ -14,7 +14,7 @@ skipped) exporting a `const` typed as `CustomStep`:
 
 ```ts
 // customSteps/randomAddress.ts
-import type { CustomStep } from "apitest-framework/types/customStep";
+import type { CustomStep } from "@assertquest/specpilot/types/customStep";
 
 export const randomAddress: CustomStep = async (ctx) => {
   const suffix = Math.floor(Math.random() * 100000);

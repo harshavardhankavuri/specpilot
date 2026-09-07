@@ -32,7 +32,7 @@ Three shapes, pick one:
 
 Writing the file:
 - New or existing file under `customSteps/` — file name doesn't matter, only the export name.
-- `import type { CustomStep } from "apitest-framework/types/customStep";`
+- `import type { CustomStep } from "@assertquest/specpilot/types/customStep";`
 - `ctx: StepContext` gives: `request` (unauthenticated), `roleRequest(role)` (authenticated),
   `spec` (Map of operationId → descriptor), `db(connectionName)`, `vars`, `defaultAuth`.
 - Raw HTTP calls via `ctx.request`/`ctx.roleRequest` do **not** get the automatic Allure

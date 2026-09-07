@@ -1,6 +1,6 @@
 # assertquest-example
 
-A full worked `apitest-framework` example against the **SwiftCargo API**, a freight-forwarding
+A full worked `@assertquest/specpilot` example against the **SwiftCargo API**, a freight-forwarding
 service hosted at `https://assertquest.com/docs/json`. It demonstrates most of the framework's
 surface: four bearer-login auth roles (admin/dispatcher/driver/customer), chained booking/fleet
 flows, `customSteps/` for setup and cleanup, a `queries/` library for db assertions, and
@@ -20,9 +20,9 @@ npx apitest run
 content — read them directly as a reference for writing your own project, or use them as a
 starting point via copy-paste.
 
-## Depending on apitest-framework locally
+## Depending on @assertquest/specpilot locally
 
-This project's `package.json` depends on `apitest-framework` via `file:../..` since no version
+This project's `package.json` depends on `@assertquest/specpilot` via `file:../..` since no version
 is published to npm yet — a real consumer would use a published semver range instead. One
 consequence of the local `file:` link: because this checkout's own root package.json *also*
 installs its own copy of `@playwright/test` (needed for the framework's own typecheck/tests),

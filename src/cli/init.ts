@@ -102,7 +102,7 @@ export async function runInit(options: InitOptions): Promise<void> {
       .map((line, i) => (i === 0 ? line : " ".repeat(spaces) + line))
       .join("\n");
 
-  const configContent = `/** @type {import("apitest-framework/config").ApiTestConfig} */
+  const configContent = `/** @type {import("@assertquest/specpilot/config").ApiTestConfig} */
 export default {
   spec: ${JSON.stringify(options.spec)},
   baseUrlVar: "BASE_URL",

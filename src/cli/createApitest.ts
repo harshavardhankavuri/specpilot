@@ -28,7 +28,7 @@ const pkg = {
     "apitest:run": "apitest run",
   },
   dependencies: {
-    "apitest-framework": "^0.1.0",
+    "@assertquest/specpilot": "^0.1.0",
   },
   devDependencies: {
     "@playwright/test": "^1.47.0",
@@ -84,7 +84,7 @@ fs.writeFileSync(path.join(abs, "openapi.json"), JSON.stringify(openapiSpec, nul
 
 fs.writeFileSync(
   path.join(abs, "apitest.config.ts"),
-  `/** @type {import("apitest-framework/config").ApiTestConfig} */\nexport default {\n  spec: "./openapi.json",\n};\n`,
+  `/** @type {import("@assertquest/specpilot/config").ApiTestConfig} */\nexport default {\n  spec: "./openapi.json",\n};\n`,
   "utf-8"
 );
 
@@ -94,8 +94,8 @@ fs.writeFileSync(
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// The one generic spec file lives in the apitest-framework package, not this project.
-const specFile = fileURLToPath(import.meta.resolve("apitest-framework/runtime/scenario.spec.ts"));
+// The one generic spec file lives in the @assertquest/specpilot package, not this project.
+const specFile = fileURLToPath(import.meta.resolve("@assertquest/specpilot/runtime/scenario.spec.ts"));
 
 export default defineConfig({
   testDir: path.dirname(specFile),

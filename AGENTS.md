@@ -1,4 +1,4 @@
-# SpecPilot (apitest-framework) — agent instructions
+# SpecPilot (@assertquest/specpilot) — agent instructions
 
 Contract-first API test framework on Playwright. The OpenAPI spec is the source of truth —
 scenarios reference operations by `operationId`, never hand-typed URLs.
