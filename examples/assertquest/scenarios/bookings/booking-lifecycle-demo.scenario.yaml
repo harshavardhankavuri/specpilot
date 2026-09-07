@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+name: booking-lifecycle-demo
+tags: [booking, showcase]
+auth: admin
+cleanup: advanceTestShipment  # always runs after the steps below, pass or fail
+steps:
+  # --- setup: computes test-run-unique data before the real flow starts ---
+  - custom: generateBookingLabels
+
+  - name: create booking using the generated labels
+    operation: post_api-booking
+    body:
+      origin:
+        label: "{{pickupLabel}}"
+        lat: 40.7128
+        lng: -74.0060
+      destination:
+        label: "{{dropoffLabel}}"
+        lat: 34.0522
+        lng: -118.2437
+      package:
+        weightKg: 12.5
+        lengthCm: 40
+        widthCm: 30
+        heightCm: 20
+    extract:
+      shipmentId: $.shipment.id
+    assert:
+      - jsonpath: $.shipment.origin.label
+        equals: "{{pickupLabel}}"
+      - jsonpath: $.shipment.status
+        equals: "booked"
+
+  # --- transform: rewrites the already-extracted shipmentId in place ---
+  - custom: normalizeShipmentId
+
+  - name: fetch booking using the transformed id
+    operation: get_api-booking-id
+    params:
+      id: "{{shipmentId}}"
+    assert:
+      - jsonpath: $.shipment.id
+        equals: "{{shipmentId}}"

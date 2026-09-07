@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+name: Health check
+steps:
+  - name: GET /health returns ok status
+    operation: get_health
+    auth: none

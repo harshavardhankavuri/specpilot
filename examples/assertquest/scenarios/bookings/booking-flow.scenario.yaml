@@ -1,0 +1,429 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+#
+# The `steps:` flow below is the original create->fetch smoke path. `cases:`
+# extends it with the checklist we went through for this operation: CRUD/role
+# access, input validation, status codes, auth, and data integrity. All behavior
+# asserted below was confirmed live against dev before writing the assertion
+# (not assumed from the schema), same convention as scenarios/auth/rbac.cases.yaml.
+#
+# Deliberately out of scope for this file (not applicable to /api/booking):
+# - PATCH vs PUT, and PUT/DELETE idempotency — booking has no update/delete
+#   endpoint, only create (POST) and read (GET).
+# - Pagination/filtering — get_api-booking takes no query params in the spec.
+# - Headers/content-negotiation edge cases (Accept-Language, versioning, CORS) —
+#   covered generically elsewhere, nothing booking-specific about them.
+# - Rate limiting and malformed-JSON-on-the-wire — see
+#   scenarios/reliability/login-rate-limit.scenario.yaml and
+#   scenarios/reliability/malformed-json.scenario.yaml (the latter already
+#   targets this same endpoint).
+name: booking-flow
+tags: [ booking, smoke ]
+auth: admin
+steps:
+  - name: create booking
+    operation: post_api-booking
+    body:
+      origin:
+        label: "Warehouse A"
+        lat: 40.7128
+        lng: -74.0060
+      destination:
+        label: "Customer Site"
+        lat: 34.0522
+        lng: -118.2437
+      package:
+        weightKg: 12.5
+        lengthCm: 40
+        widthCm: 30
+        heightCm: 20
+    extract:
+      shipmentId: $.shipment.id
+    assert:
+      - jsonpath: $.shipment.status
+        equals: "booked"
+      - jsonpath: $.shipment.id
+        exists: true
+      - jsonpath: $.shipment.customerId
+        exists: true
+      - jsonpath: $.shipment.origin.label
+        equals: Warehouse A
+      - jsonpath: $.shipment.origin.lat
+        equals: 40.7128
+      - jsonpath: $.shipment.origin.lng
+        equals: -74.006
+      - jsonpath: $.shipment.destination.label
+        equals: Customer Site
+      - jsonpath: $.shipment.destination.lat
+        equals: 34.0522
+      - jsonpath: $.shipment.destination.lng
+        equals: -118.2437
+      - jsonpath: $.shipment.package.weightKg
+        equals: 12.5
+      - jsonpath: $.shipment.package.lengthCm
+        equals: 40
+      - jsonpath: $.shipment.package.widthCm
+        equals: 30
+      - jsonpath: $.shipment.package.heightCm
+        equals: 20
+      - jsonpath: $.shipment.distanceKm
+        equals: 3935.746254609723
+      - jsonpath: $.shipment.priceCents
+        equals: 33486
+      - jsonpath: $.shipment.currency
+        equals: USD
+      - jsonpath: $.shipment.approved
+        equals: true
+      - jsonpath: $.shipment.currentPosition.lat
+        equals: 40.7128
+      - jsonpath: $.shipment.currentPosition.lng
+        equals: -74.006
+      - jsonpath: $.shipment.positionUpdatedAt
+        exists: true
+      - jsonpath: $.shipment.createdAt
+        exists: true
+
+  - name: fetch booking by id
+    operation: get_api-booking-id
+    params:
+      id: "{{shipmentId}}"
+    assert:
+      - jsonpath: $.shipment.id
+        equals: "{{shipmentId}}"
+      - jsonpath: $.shipment.customerId
+        exists: true
+      - jsonpath: $.shipment.origin.label
+        equals: Warehouse A
+      - jsonpath: $.shipment.origin.lat
+        equals: 40.7128
+      - jsonpath: $.shipment.origin.lng
+        equals: -74.006
+      - jsonpath: $.shipment.destination.label
+        equals: Customer Site
+      - jsonpath: $.shipment.destination.lat
+        equals: 34.0522
+      - jsonpath: $.shipment.destination.lng
+        equals: -118.2437
+      - jsonpath: $.shipment.package.weightKg
+        equals: 12.5
+      - jsonpath: $.shipment.package.lengthCm
+        equals: 40
+      - jsonpath: $.shipment.package.widthCm
+        equals: 30
+      - jsonpath: $.shipment.package.heightCm
+        equals: 20
+      - jsonpath: $.shipment.distanceKm
+        equals: 3935.746254609723
+      - jsonpath: $.shipment.priceCents
+        equals: 33486
+      - jsonpath: $.shipment.currency
+        equals: USD
+      - jsonpath: $.shipment.status
+        equals: booked
+      - jsonpath: $.shipment.approved
+        equals: true
+      - jsonpath: $.shipment.currentPosition.lat
+        equals: 40.7128
+      - jsonpath: $.shipment.currentPosition.lng
+        equals: -74.006
+      - jsonpath: $.shipment.positionUpdatedAt
+        exists: true
+      - jsonpath: $.shipment.createdAt
+        exists: true
+
+cases:
+  # ---------------------------------------------------------------------------
+  # CRUD / role access
+  # ---------------------------------------------------------------------------
+  - name: create booking — customer can create their own booking
+    steps:
+      - operation: post_api-booking
+        auth: customer
+        body: &validBookingBody
+          origin:
+            label: "Warehouse A"
+            lat: 40.7128
+            lng: -74.0060
+          destination:
+            label: "Customer Site"
+            lat: 34.0522
+            lng: -118.2437
+          package:
+            weightKg: 12.5
+            lengthCm: 40
+            widthCm: 30
+            heightCm: 20
+        extract:
+          ownCustomerId: $.shipment.customerId
+        assert:
+          - status: 201
+
+      - name: current user id matches the booking's customerId
+        operation: get_api-auth-me
+        auth: customer
+        assert:
+          - jsonpath: $.user.id
+            equals: "{{ownCustomerId}}"
+
+  - name: create booking — driver is forbidden (confirmed live, not assumed)
+    steps:
+      - operation: post_api-booking
+        auth: driver
+        body: *validBookingBody
+        assert:
+          - status: 403
+          - jsonpath: $.error.code
+            equals: FORBIDDEN
+          - jsonpath: $.error.message
+            equals: "This action requires one of: customer, dispatcher, admin"
+
+  - name: get booking by id — unknown id is not found
+    steps:
+      - operation: get_api-booking-id
+        params:
+          id: "does-not-exist-12345"
+        assert:
+          - status: 404
+          - jsonpath: $.error.code
+            equals: NOT_FOUND
+
+  - name: get booking by id — a different customer is forbidden
+    steps:
+      - name: create booking as admin
+        operation: post_api-booking
+        body: *validBookingBody
+        extract:
+          shipmentId: $.shipment.id
+
+      - name: unrelated customer cannot read it
+        operation: get_api-booking-id
+        auth: customer
+        params:
+          id: "{{shipmentId}}"
+        assert:
+          - status: 403
+
+  - name: get booking by id — an unassigned driver is forbidden
+    steps:
+      - name: create booking as admin
+        operation: post_api-booking
+        body: *validBookingBody
+        extract:
+          shipmentId: $.shipment.id
+
+      - name: unassigned driver cannot read it
+        operation: get_api-booking-id
+        auth: driver
+        params:
+          id: "{{shipmentId}}"
+        assert:
+          - status: 403
+
+  - name: list bookings — customer only sees their own bookings
+    steps:
+      # `assert.jsonpath` doesn't support {{var}} interpolation (see
+      # docs/scenario-format.md), so "every row's customerId equals the
+      # caller's own id" can't be expressed as a declarative filter assertion —
+      # see customSteps/bookingEdgeCases.ts.
+      - custom: assertBookingListIsOwnBookingsOnly
+
+  # ---------------------------------------------------------------------------
+  # Input validation
+  # ---------------------------------------------------------------------------
+  - name: create booking — missing required field is rejected
+    steps:
+      - operation: post_api-booking
+        body:
+          origin:
+            label: "Warehouse A"
+            lat: 40.7128
+            lng: -74.0060
+          destination:
+            label: "Customer Site"
+            lat: 34.0522
+            lng: -118.2437
+          # package deliberately omitted
+        assert:
+          - status: 400
+          - jsonpath: $.error.code
+            equals: VALIDATION_ERROR
+          - jsonpath: $.error.details.fieldErrors.package
+            contains: "Required"
+
+  - name: create booking — wrong data type is rejected
+    steps:
+      - operation: post_api-booking
+        body:
+          origin:
+            label: "Warehouse A"
+            lat: "not-a-number"
+            lng: -74.0060
+          destination:
+            label: "Customer Site"
+            lat: 34.0522
+            lng: -118.2437
+          package:
+            weightKg: 12.5
+            lengthCm: 40
+            widthCm: 30
+            heightCm: 20
+        assert:
+          - status: 400
+          - jsonpath: $.error.code
+            equals: VALIDATION_ERROR
+          - jsonpath: $.error.details.fieldErrors.origin
+            contains: "Expected number, received string"
+
+  - name: create booking — latitude at the documented maximum (90) is accepted
+    steps:
+      - operation: post_api-booking
+        body:
+          origin:
+            label: "Warehouse A"
+            lat: 90
+            lng: -74.0060
+          destination:
+            label: "Customer Site"
+            lat: 34.0522
+            lng: -118.2437
+          package:
+            weightKg: 12.5
+            lengthCm: 40
+            widthCm: 30
+            heightCm: 20
+        assert:
+          - status: 201
+          - jsonpath: $.shipment.origin.lat
+            equals: 90
+
+  - name: create booking — latitude past the documented maximum is rejected
+    steps:
+      - operation: post_api-booking
+        body:
+          origin:
+            label: "Warehouse A"
+            lat: 90.1
+            lng: -74.0060
+          destination:
+            label: "Customer Site"
+            lat: 34.0522
+            lng: -118.2437
+          package:
+            weightKg: 12.5
+            lengthCm: 40
+            widthCm: 30
+            heightCm: 20
+        assert:
+          - status: 400
+          - jsonpath: $.error.code
+            equals: VALIDATION_ERROR
+          - jsonpath: $.error.details.fieldErrors.origin
+            contains: "Number must be less than or equal to 90"
+
+  - name: create booking — zero weight is rejected (must be greater than 0)
+    steps:
+      - operation: post_api-booking
+        body:
+          origin:
+            label: "Warehouse A"
+            lat: 40.7128
+            lng: -74.0060
+          destination:
+            label: "Customer Site"
+            lat: 34.0522
+            lng: -118.2437
+          package:
+            weightKg: 0
+            lengthCm: 40
+            widthCm: 30
+            heightCm: 20
+        assert:
+          - status: 400
+          - jsonpath: $.error.code
+            equals: VALIDATION_ERROR
+          - jsonpath: $.error.details.fieldErrors.package
+            contains: "Number must be greater than 0"
+
+  - name: create booking — unexpected extra field is accepted and ignored
+    steps:
+      - operation: post_api-booking
+        body:
+          origin:
+            label: "Warehouse A"
+            lat: 40.7128
+            lng: -74.0060
+          destination:
+            label: "Customer Site"
+            lat: 34.0522
+            lng: -118.2437
+          package:
+            weightKg: 12.5
+            lengthCm: 40
+            widthCm: 30
+            heightCm: 20
+          notInTheSchema: "should be dropped, not rejected"
+        assert:
+          - status: 201
+
+  - name: create booking — script/SQLi payload in a label is stored verbatim, not executed
+    steps:
+      - operation: post_api-booking
+        body:
+          origin:
+            label: "<script>alert(1)</script>'; DROP TABLE shipments;--"
+            lat: 40.7128
+            lng: -74.0060
+          destination:
+            label: "Customer Site"
+            lat: 34.0522
+            lng: -118.2437
+          package:
+            weightKg: 12.5
+            lengthCm: 40
+            widthCm: 30
+            heightCm: 20
+        assert:
+          - status: 201
+          - jsonpath: $.shipment.origin.label
+            equals: "<script>alert(1)</script>'; DROP TABLE shipments;--"
+
+  # ---------------------------------------------------------------------------
+  # Auth
+  # ---------------------------------------------------------------------------
+  - name: create booking — missing auth header is unauthorized
+    steps:
+      - operation: post_api-booking
+        auth: none
+        body: *validBookingBody
+        assert:
+          - status: 401
+          - jsonpath: $.error.code
+            equals: UNAUTHORIZED
+          - jsonpath: $.error.message
+            equals: "Missing bearer token"
+
+  - name: create booking — invalid bearer token is unauthorized
+    steps:
+      - operation: post_api-booking
+        headers:
+          Authorization: "Bearer not-a-real-token"
+        body: *validBookingBody
+        assert:
+          - status: 401
+          - jsonpath: $.error.code
+            equals: UNAUTHORIZED
+          - jsonpath: $.error.message
+            equals: "Invalid access token"
+
+  # ---------------------------------------------------------------------------
+  # Data integrity
+  # ---------------------------------------------------------------------------
+  - name: create booking — malformed JSON body is rejected, not 500'd
+    steps:
+      - custom: sendMalformedBookingJson
+
+  - name: create booking — duplicate concurrent submissions both succeed as distinct shipments
+    steps:
+      # No unique constraint / idempotency key on booking creation: this documents
+      # that two identical concurrent POSTs both succeed with different ids rather
+      # than deduping — see customSteps/bookingEdgeCases.ts.
+      - custom: createDuplicateBookingsConcurrently

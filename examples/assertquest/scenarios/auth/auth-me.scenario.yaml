@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+name: auth-me
+tags: [ auth, smoke ]
+auth: admin
+steps:
+  - name: get current user
+    operation: get_api-auth-me
+    assert:
+      - jsonpath: $.user.role
+        equals: "admin"
+      - jsonpath: $.user.id
+        exists: true
+      - jsonpath: $.user.email
+        equals: admin@swiftcargo.test
+      - jsonpath: $.user.createdAt
+        exists: true

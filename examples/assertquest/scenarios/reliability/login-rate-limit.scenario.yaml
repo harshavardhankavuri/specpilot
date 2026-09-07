@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+name: login-rate-limit
+tags: [security, reliability]
+steps:
+  # Fires 20 rapid bad-credential login attempts and fails unless a 429 shows up
+  # somewhere in the sequence — see customSteps/reliabilitySteps.ts for why this
+  # needs a custom step rather than a declarative operation/assert.
+  - custom: probeLoginRateLimit

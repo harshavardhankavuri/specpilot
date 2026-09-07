@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+name: csv-export-showcase
+tags: [showcase]
+auth: admin
+steps:
+  - name: export tracking CSV — raw-body assertions
+    operation: get_api-tracking-export.csv
+    assert:
+      - status: 200
+      - header: content-type
+        contains: "csv"
+      - bodyStartsWith: "id,"
+      - bodyMinBytes: 1
+      - bodyMaxBytes: 10000000

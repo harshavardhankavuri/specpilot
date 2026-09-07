@@ -1,0 +1,284 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+#
+# Generated via /checklist-cases against put_api-fleet-assignments-shipmentId,
+# delete_api-fleet-assignments-id, and get_api-fleet-assignments. Every status
+# code and error body below was confirmed live against dev before writing the
+# assertion (not assumed from the schema) — same convention as
+# scenarios/auth/rbac.cases.yaml and scenarios/bookings/booking-flow.scenario.yaml.
+#
+# Deliberately out of scope for this file:
+# - Boundary-value validation — UpsertAssignmentRequest has no numeric/enum
+#   constraints (just two required strings + two required date-time strings), so
+#   there's nothing to boundary-test beyond the type checks below.
+# - XSS/SQLi payload — vehicleId/driverId are foreign-key references, not
+#   free-text fields; a bogus id is already covered by the "nonexistent vehicle"
+#   referential-integrity case instead.
+# - Pagination/filtering — get_api-fleet-assignments takes no query params.
+# - Concurrency — already covered by
+#   scenarios/reliability/fleet-assignment-race.scenario.yaml, which targets this
+#   same PUT endpoint.
+name: fleet-assignments
+tags: [ fleet ]
+auth: admin
+cases:
+  # ---------------------------------------------------------------------------
+  # CRUD / role access
+  # ---------------------------------------------------------------------------
+  - name: upsert assignment — dispatcher can assign a vehicle/driver to a shipment
+    steps:
+      - custom: pickVehicleAndDriver
+
+      - name: create booking to assign
+        operation: post_api-booking
+        body:
+          origin: { label: "Warehouse A", lat: 40.7128, lng: -74.0060 }
+          destination: { label: "Customer Site", lat: 34.0522, lng: -118.2437 }
+          package: { weightKg: 12.5, lengthCm: 40, widthCm: 30, heightCm: 20 }
+        extract:
+          shipmentId: $.shipment.id
+        assert:
+          - status: 201
+
+      - name: dispatcher upserts the assignment
+        operation: put_api-fleet-assignments-shipmentId
+        auth: dispatcher
+        params:
+          shipmentId: "{{shipmentId}}"
+        body:
+          vehicleId: "{{raceVehicleId}}"
+          driverId: "{{raceDriverId}}"
+          scheduledStart: "2027-01-01T09:00:00.000Z"
+          scheduledEnd: "2027-01-01T10:00:00.000Z"
+        assert:
+          - status: 200
+          - jsonpath: $.assignment.shipmentId
+            equals: "{{shipmentId}}"
+          - jsonpath: $.assignment.vehicleId
+            equals: "{{raceVehicleId}}"
+          - jsonpath: $.assignment.driverId
+            equals: "{{raceDriverId}}"
+
+  - name: upsert assignment — driver is forbidden (confirmed live, not assumed)
+    steps:
+      - custom: pickVehicleAndDriver
+
+      - name: create booking to assign
+        operation: post_api-booking
+        body:
+          origin: { label: "Warehouse A", lat: 40.7128, lng: -74.0060 }
+          destination: { label: "Customer Site", lat: 34.0522, lng: -118.2437 }
+          package: { weightKg: 12.5, lengthCm: 40, widthCm: 30, heightCm: 20 }
+        extract:
+          shipmentId: $.shipment.id
+
+      - name: driver cannot assign
+        operation: put_api-fleet-assignments-shipmentId
+        auth: driver
+        params:
+          shipmentId: "{{shipmentId}}"
+        body:
+          vehicleId: "{{raceVehicleId}}"
+          driverId: "{{raceDriverId}}"
+          scheduledStart: "2027-01-01T09:00:00.000Z"
+          scheduledEnd: "2027-01-01T10:00:00.000Z"
+        assert:
+          - status: 403
+          - jsonpath: $.error.code
+            equals: FORBIDDEN
+          - jsonpath: $.error.message
+            equals: "This action requires one of: dispatcher, admin"
+
+  - name: upsert assignment — customer is forbidden (confirmed live, not assumed)
+    steps:
+      - custom: pickVehicleAndDriver
+
+      - name: create booking to assign
+        operation: post_api-booking
+        body:
+          origin: { label: "Warehouse A", lat: 40.7128, lng: -74.0060 }
+          destination: { label: "Customer Site", lat: 34.0522, lng: -118.2437 }
+          package: { weightKg: 12.5, lengthCm: 40, widthCm: 30, heightCm: 20 }
+        extract:
+          shipmentId: $.shipment.id
+
+      - name: customer cannot assign
+        operation: put_api-fleet-assignments-shipmentId
+        auth: customer
+        params:
+          shipmentId: "{{shipmentId}}"
+        body:
+          vehicleId: "{{raceVehicleId}}"
+          driverId: "{{raceDriverId}}"
+          scheduledStart: "2027-01-01T09:00:00.000Z"
+          scheduledEnd: "2027-01-01T10:00:00.000Z"
+        assert:
+          - status: 403
+          - jsonpath: $.error.code
+            equals: FORBIDDEN
+
+  - name: list assignments — driver is forbidden
+    steps:
+      - operation: get_api-fleet-assignments
+        auth: driver
+        assert:
+          - status: 403
+          - jsonpath: $.error.code
+            equals: FORBIDDEN
+
+  - name: list assignments — customer is forbidden
+    steps:
+      - operation: get_api-fleet-assignments
+        auth: customer
+        assert:
+          - status: 403
+          - jsonpath: $.error.code
+            equals: FORBIDDEN
+
+  - name: delete assignment — driver is forbidden, admin can delete, repeat delete is 404
+    steps:
+      - custom: pickVehicleAndDriver
+
+      - name: create booking to assign
+        operation: post_api-booking
+        body:
+          origin: { label: "Warehouse A", lat: 40.7128, lng: -74.0060 }
+          destination: { label: "Customer Site", lat: 34.0522, lng: -118.2437 }
+          package: { weightKg: 12.5, lengthCm: 40, widthCm: 30, heightCm: 20 }
+        extract:
+          shipmentId: $.shipment.id
+
+      - name: create the assignment to delete
+        operation: put_api-fleet-assignments-shipmentId
+        params:
+          shipmentId: "{{shipmentId}}"
+        body:
+          vehicleId: "{{raceVehicleId}}"
+          driverId: "{{raceDriverId}}"
+          scheduledStart: "2027-01-01T09:00:00.000Z"
+          scheduledEnd: "2027-01-01T10:00:00.000Z"
+        extract:
+          assignmentId: $.assignment.id
+
+      - name: driver cannot delete it
+        operation: delete_api-fleet-assignments-id
+        auth: driver
+        params:
+          id: "{{assignmentId}}"
+        assert:
+          - status: 403
+
+      - name: admin deletes it
+        operation: delete_api-fleet-assignments-id
+        params:
+          id: "{{assignmentId}}"
+        assert:
+          - status: 204
+
+      # KNOWN SPEC DRIFT — left failing on purpose, do not "fix" by loosening
+      # the assertion. delete_api-fleet-assignments-id only documents
+      # [204, 401, 403] in the synced spec, but the live API actually returns
+      # 404 with {"error":{"code":"NOT_FOUND","message":"Assignment not
+      # found"}} for a repeat delete. That means SpecPilot's automatic
+      # "status is a documented response" check fails here regardless of this
+      # assert: block — this case exists to keep that contract mismatch visible
+      # until either the spec is updated to document 404, or delete is made
+      # truly idempotent (204 again). See docs/scenario-format.md's automatic
+      # per-step checks.
+      - name: deleting it again returns 404 (undocumented in the spec)
+        operation: delete_api-fleet-assignments-id
+        params:
+          id: "{{assignmentId}}"
+        assert:
+          - status: 404
+          - jsonpath: $.error.code
+            equals: NOT_FOUND
+
+  # ---------------------------------------------------------------------------
+  # Input validation
+  # ---------------------------------------------------------------------------
+  - name: upsert assignment — missing required field is rejected
+    steps:
+      - custom: pickVehicleAndDriver
+
+      - name: create booking to assign
+        operation: post_api-booking
+        body:
+          origin: { label: "Warehouse A", lat: 40.7128, lng: -74.0060 }
+          destination: { label: "Customer Site", lat: 34.0522, lng: -118.2437 }
+          package: { weightKg: 12.5, lengthCm: 40, widthCm: 30, heightCm: 20 }
+        extract:
+          shipmentId: $.shipment.id
+
+      - name: driverId deliberately omitted
+        operation: put_api-fleet-assignments-shipmentId
+        params:
+          shipmentId: "{{shipmentId}}"
+        body:
+          vehicleId: "{{raceVehicleId}}"
+          scheduledStart: "2027-01-01T09:00:00.000Z"
+          scheduledEnd: "2027-01-01T10:00:00.000Z"
+        assert:
+          - status: 400
+          - jsonpath: $.error.code
+            equals: VALIDATION_ERROR
+          - jsonpath: $.error.details.fieldErrors.driverId
+            contains: "Required"
+
+  - name: upsert assignment — wrong data type is rejected
+    steps:
+      - custom: pickVehicleAndDriver
+
+      - name: create booking to assign
+        operation: post_api-booking
+        body:
+          origin: { label: "Warehouse A", lat: 40.7128, lng: -74.0060 }
+          destination: { label: "Customer Site", lat: 34.0522, lng: -118.2437 }
+          package: { weightKg: 12.5, lengthCm: 40, widthCm: 30, heightCm: 20 }
+        extract:
+          shipmentId: $.shipment.id
+
+      - name: vehicleId sent as a number instead of a string
+        operation: put_api-fleet-assignments-shipmentId
+        params:
+          shipmentId: "{{shipmentId}}"
+        body:
+          vehicleId: 12345
+          driverId: "{{raceDriverId}}"
+          scheduledStart: "2027-01-01T09:00:00.000Z"
+          scheduledEnd: "2027-01-01T10:00:00.000Z"
+        assert:
+          - status: 400
+          - jsonpath: $.error.code
+            equals: VALIDATION_ERROR
+          - jsonpath: $.error.details.fieldErrors.vehicleId
+            contains: "Expected string, received number"
+
+  # ---------------------------------------------------------------------------
+  # Data integrity (referential integrity)
+  # ---------------------------------------------------------------------------
+  - name: upsert assignment — nonexistent vehicleId is rejected
+    steps:
+      - custom: pickVehicleAndDriver
+
+      - name: create booking to assign
+        operation: post_api-booking
+        body:
+          origin: { label: "Warehouse A", lat: 40.7128, lng: -74.0060 }
+          destination: { label: "Customer Site", lat: 34.0522, lng: -118.2437 }
+          package: { weightKg: 12.5, lengthCm: 40, widthCm: 30, heightCm: 20 }
+        extract:
+          shipmentId: $.shipment.id
+
+      - name: vehicleId references a vehicle that doesn't exist
+        operation: put_api-fleet-assignments-shipmentId
+        params:
+          shipmentId: "{{shipmentId}}"
+        body:
+          vehicleId: "nonexistent-vehicle-id"
+          driverId: "{{raceDriverId}}"
+          scheduledStart: "2027-01-01T09:00:00.000Z"
+          scheduledEnd: "2027-01-01T10:00:00.000Z"
+        assert:
+          - status: 400
+          - jsonpath: $.error.message
+            equals: 'Unknown vehicle "nonexistent-vehicle-id"'

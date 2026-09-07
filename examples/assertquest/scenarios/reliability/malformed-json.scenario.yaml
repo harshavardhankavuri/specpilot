@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+name: malformed-json-booking
+tags: [security, reliability]
+auth: admin
+steps:
+  # Sends a truncated (syntactically invalid) JSON body and fails unless the API
+  # answers 400 rather than 500ing or accepting it.
+  - custom: sendMalformedBookingJson

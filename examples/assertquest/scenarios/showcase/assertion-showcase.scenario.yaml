@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+name: assertion-showcase
+tags: [showcase]
+auth: admin
+steps:
+  - name: get current user — exercise every assertion type
+    operation: get_api-auth-me
+    # Every step already gets these two automatically, from the spec itself,
+    # with no assert: needed:
+    #   1. status is one of the operation's documented responses (200/401/404)
+    #   2. response body matches that status's documented schema (PublicUser)
+    assert:
+      # --- status ---
+      - status: 200
+
+      # --- headers ---
+      - header: content-type
+        equals: "application/json; charset=utf-8"
+      - header: content-type
+        contains: "json"
+      - header: content-type
+        matches: "^application/json"
+      - header: content-length
+        exists: true
+      - header: x-powered-by
+        exists: false
+
+      # --- body: equals / contains / exists ---
+      - jsonpath: $.user.role
+        equals: "admin"
+      - jsonpath: $.user.email
+        exists: true
+      - jsonpath: $.user.nickname
+        exists: false
+
+      # --- body: regex / enum membership ---
+      - jsonpath: $.user.email
+        matches: "^[^@]+@[^@]+\\.[^@]+$"
+      - jsonpath: $.user.role
+        oneOf: ["admin", "dispatcher", "driver", "customer"]
+
+      # --- body: length bounds ---
+      - jsonpath: $.user.id
+        minLength: 1
+      - jsonpath: $.user.email
+        maxLength: 254
+
+      # --- body: existence check on the remaining field ---
+      # (greaterThan/lessThan/etc. need a real numeric field — PublicUser has none;
+      # see booking-flow.scenario.yaml's $.shipment.priceCents for that instead.)
+      - jsonpath: $.user.createdAt
+        exists: true

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx apitest sync)",
+      "Bash(npx apitest check)",
+      "Bash(npx apitest schema)",
+      "Bash(npx apitest run --dry-run)",
+      "Bash(npm run test:unit)",
+      "Bash(npm run typecheck)",
+      "Bash(npx apitest *)",
+      "Bash(SCRATCH=\"/c/Users/User/AppData/Local/Temp/claude/c--Users-User-Documents-SpecPilot/bb4cd00e-a5d5-4571-8ea1-56a125913f69/scratchpad\" *)",
+      "Read(//c/Users/User/AppData/Local/Temp/claude/c--Users-User-Documents-SpecPilot/bb4cd00e-a5d5-4571-8ea1-56a125913f69/scratchpad/pack-test/**)",
+      "Bash(node /c/Users/User/AppData/Local/Temp/claude/c--Users-User-Documents-SpecPilot/bb4cd00e-a5d5-4571-8ea1-56a125913f69/scratchpad/fix-pkg.cjs /c/Users/User/AppData/Local/Temp/claude/c--Users-User-Documents-SpecPilot/bb4cd00e-a5d5-4571-8ea1-56a125913f69/scratchpad/scaffold-test /c/Users/User/AppData/Local/Temp/claude/c--Users-User-Documents-SpecPilot/bb4cd00e-a5d5-4571-8ea1-56a125913f69/scratchpad/apitest-framework-0.1.0.tgz)",
+      "Read(//c/Users/User/AppData/Local/Temp/claude/c--Users-User-Documents-SpecPilot/bb4cd00e-a5d5-4571-8ea1-56a125913f69/scratchpad/scaffold-test/**)"
+    ]
+  }
+}

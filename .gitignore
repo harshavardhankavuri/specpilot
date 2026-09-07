@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.spec-cache/
+test-results/
+playwright-report/
+blob-report/
+allure-results/
+allure-report/
+src/db/types/
+*.log
+**/environments/*.env
+!**/environments/*.env.example
+.DS_Store
+examples/petstore/scenarios/

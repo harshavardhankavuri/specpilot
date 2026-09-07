@@ -1,0 +1,108 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+# RBAC matrix, confirmed live (not assumed) against each of the four seeded
+# accounts — admin/dispatcher/driver/customer — before writing any assertion here.
+name: rbac-permissions
+tags: [ rbac ]
+cases:
+  # /api/admin/audit-log — admin only
+  - name: audit log — admin can access
+    steps:
+      - operation: get_api-admin-audit-log
+        auth: admin
+        assert:
+          - status: 200
+          - jsonpath: $.entries
+            minLength: 100
+  - name: audit log — dispatcher is forbidden
+    steps:
+      - operation: get_api-admin-audit-log
+        auth: dispatcher
+        assert:
+          - status: 403
+          - jsonpath: $.error.code
+            equals: FORBIDDEN
+          - jsonpath: $.error.message
+            equals: "This action requires one of: admin"
+  - name: audit log — driver is forbidden
+    steps:
+      - operation: get_api-admin-audit-log
+        auth: driver
+        assert:
+          - status: 403
+          - jsonpath: $.error.code
+            equals: FORBIDDEN
+          - jsonpath: $.error.message
+            equals: "This action requires one of: admin"
+  - name: audit log — customer is forbidden
+    steps:
+      - operation: get_api-admin-audit-log
+        auth: customer
+        assert:
+          - status: 403
+          - jsonpath: $.error.code
+            equals: FORBIDDEN
+          - jsonpath: $.error.message
+            equals: "This action requires one of: admin"
+  - name: audit log — no auth token is unauthorized
+    steps:
+      - operation: get_api-admin-audit-log
+        auth: none
+        assert:
+          - status: 401
+          - jsonpath: $.error.code
+            equals: UNAUTHORIZED
+          - jsonpath: $.error.message
+            equals: Missing bearer token
+
+  # /api/fleet/vehicles — admin + dispatcher; not driver/customer
+  - name: fleet vehicles — admin can access
+    steps:
+      - operation: get_api-fleet-vehicles
+        auth: admin
+        assert:
+          - status: 200
+          - jsonpath: $.vehicles
+            minLength: 3
+  - name: fleet vehicles — dispatcher can access
+    steps:
+      - operation: get_api-fleet-vehicles
+        auth: dispatcher
+        assert:
+          - status: 200
+          - jsonpath: $.vehicles
+            minLength: 3
+  - name: fleet vehicles — driver is forbidden
+    steps:
+      - operation: get_api-fleet-vehicles
+        auth: driver
+        assert:
+          - status: 403
+          - jsonpath: $.error.code
+            equals: FORBIDDEN
+          - jsonpath: $.error.message
+            equals: "This action requires one of: dispatcher, admin"
+  - name: fleet vehicles — customer is forbidden
+    steps:
+      - operation: get_api-fleet-vehicles
+        auth: customer
+        assert:
+          - status: 403
+          - jsonpath: $.error.code
+            equals: FORBIDDEN
+          - jsonpath: $.error.message
+            equals: "This action requires one of: dispatcher, admin"
+
+  # /api/admin/feature-flags — despite the /admin/ path, every authenticated
+  # role can read it (confirmed live) — this case documents that on purpose.
+  - name: feature flags — customer can access despite the /admin/ path
+    steps:
+      - operation: get_api-admin-feature-flags
+        auth: customer
+        assert:
+          - status: 200
+          - jsonpath: $.flags.priorityLane
+            equals: false
+          - jsonpath: $.flags.extendedTracking
+            equals: false
+          - jsonpath: $.flags.newAdminUi
+            equals: false

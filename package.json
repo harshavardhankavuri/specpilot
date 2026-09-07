@@ -1,0 +1,58 @@
+{
+  "name": "apitest-framework",
+  "version": "0.1.0",
+  "description": "Contract-first, generic API test framework on Playwright (OpenAPI-driven, SQL Server / Postgres support)",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "apitest": "bin/apitest.js",
+    "create-apitest": "bin/create-apitest.js"
+  },
+  "exports": {
+    "./config": "./src/types/config.ts",
+    "./types/customStep": "./src/types/customStep.ts",
+    "./runtime/scenario.spec.ts": "./runtime/scenario.spec.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "runtime",
+    "src"
+  ],
+  "scripts": {
+    "cli": "tsx src/cli/index.ts",
+    "create": "tsx src/cli/createApitest.ts",
+    "test:unit": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@apidevtools/swagger-parser": "^10.1.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "jsonpath-plus": "^9.0.0",
+    "mssql": "^11.0.1",
+    "openapi-types": "^12.1.3",
+    "pg": "^8.13.0",
+    "tsx": "^4.19.1",
+    "yaml": "^2.5.1",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.23.5"
+  },
+  "peerDependencies": {
+    "@playwright/test": "^1.47.0"
+  },
+  "peerDependenciesMeta": {
+    "@playwright/test": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/mssql": "^9.1.5",
+    "@types/node": "^22.7.4",
+    "@types/pg": "^8.11.10",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1"
+  }
+}

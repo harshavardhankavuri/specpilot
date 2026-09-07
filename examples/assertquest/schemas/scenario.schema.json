@@ -1,0 +1,181 @@
+{
+  "$ref": "#/definitions/ScenarioFile",
+  "definitions": {
+    "ScenarioFile": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "auth": {
+          "type": "string"
+        },
+        "db": {
+          "type": "object",
+          "properties": {
+            "connection": {
+              "type": "string"
+            },
+            "seed": {
+              "type": "string"
+            },
+            "rollback": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "operation": {
+                "type": "string"
+              },
+              "custom": {
+                "type": "string"
+              },
+              "auth": {
+                "type": "string"
+              },
+              "params": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "query": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "headers": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "body": {},
+              "extract": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "assert": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "integer"
+                    },
+                    "jsonpath": {
+                      "type": "string"
+                    },
+                    "header": {
+                      "type": "string"
+                    },
+                    "equals": {},
+                    "contains": {},
+                    "exists": {
+                      "type": "boolean"
+                    },
+                    "matches": {
+                      "type": "string"
+                    },
+                    "oneOf": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "minLength": {
+                      "type": "number"
+                    },
+                    "maxLength": {
+                      "type": "number"
+                    },
+                    "greaterThan": {
+                      "type": "number"
+                    },
+                    "lessThan": {
+                      "type": "number"
+                    },
+                    "greaterThanOrEqual": {
+                      "type": "number"
+                    },
+                    "lessThanOrEqual": {
+                      "type": "number"
+                    },
+                    "bodyStartsWith": {
+                      "type": "string"
+                    },
+                    "bodyMinBytes": {
+                      "type": "number"
+                    },
+                    "bodyMaxBytes": {
+                      "type": "number"
+                    },
+                    "db": {
+                      "type": "string"
+                    },
+                    "query": {
+                      "type": "string"
+                    },
+                    "params": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "expectRow": {
+                      "type": "object",
+                      "additionalProperties": {}
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/ScenarioFile/properties/steps/items"
+                },
+                "minItems": 1
+              }
+            },
+            "required": [
+              "name",
+              "steps"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "cleanup": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

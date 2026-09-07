@@ -1,0 +1,101 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+#
+# End-to-end demo of every way SpecPilot can touch a database in one flow — requires
+# `--env local` (the self-hosted stack in ../../assertquest; `db.connections.primary` in
+# apitest.config.ts only resolves against `local.env`'s PRIMARY_DB_URL, not `dev`, which has no
+# reachable DB). Run with:
+#   APITEST_ENV=local npx playwright test --grep "booking-db-e2e"
+#
+# The three DB mechanisms this chains together (see docs/scenario-format.md /
+# docs/custom-steps.md):
+#   1. Declarative `assert: - db:` — flat expectRow equality check.
+#   2. A `custom:` step calling `ctx.db()` directly — for when a check needs more than flat
+#      equality (here: reading a row to reuse its value, not just assert on it).
+#   3. That DB value flowing into `ctx.vars`, then into a *later* HTTP assertion — proving the
+#      API's response actually matches what landed in the database, not a hardcoded expectation.
+#
+# A step's own `assert:` runs BEFORE its own `extract:` (see runStep.ts) — so a var extracted by
+# a step is only usable in a *later* step's assert, never that same step's. That's why the db:
+# checks below sit one step after the operation that created the row, not inline on it.
+name: booking-db-e2e
+tags: [booking, fleet, db]
+auth: admin
+steps:
+  - custom: generateBookingLabels
+
+  - name: create booking
+    operation: post_api-booking
+    body:
+      origin:
+        label: "{{pickupLabel}}"
+        lat: 40.7128
+        lng: -74.0060
+      destination:
+        label: "{{dropoffLabel}}"
+        lat: 34.0522
+        lng: -118.2437
+      package:
+        weightKg: 12.5
+        lengthCm: 40
+        widthCm: 30
+        heightCm: 20
+    extract:
+      shipmentId: $.shipment.id
+    assert:
+      - status: 201
+
+  # (2) Custom step reading the DB directly, (3) writing what it found into vars.
+  - custom: fetchShipmentFromDb
+
+  - name: fetch booking by id — API response must match what's actually in the database
+    operation: get_api-booking-id
+    params:
+      id: "{{shipmentId}}"
+    assert:
+      - status: 200
+      - jsonpath: $.shipment.priceCents
+        equals: "{{dbPriceCents}}"
+      - jsonpath: $.shipment.distanceKm
+        equals: "{{dbDistanceKm}}"
+      - jsonpath: $.shipment.status
+        equals: "{{dbStatus}}"
+      # (1) Declarative DB check — the row landed correctly when it was created a step ago.
+      - db: primary
+        query: 'SELECT status FROM shipments WHERE id = ?'
+        params: ["{{shipmentId}}"]
+        expectRow:
+          status: booked
+
+  - custom: pickVehicleAndDriver
+
+  - name: assign a vehicle/driver to the shipment
+    operation: put_api-fleet-assignments-shipmentId
+    auth: dispatcher
+    params:
+      shipmentId: "{{shipmentId}}"
+    body:
+      vehicleId: "{{raceVehicleId}}"
+      driverId: "{{raceDriverId}}"
+      scheduledStart: "2027-02-01T09:00:00.000Z"
+      scheduledEnd: "2027-02-01T10:00:00.000Z"
+    extract:
+      assignmentId: $.assignment.id
+    assert:
+      - status: 200
+
+  - name: list assignments — confirm it's there via the API and via the join table's foreign keys
+    operation: get_api-fleet-assignments
+    auth: dispatcher
+    assert:
+      - status: 200
+      - jsonpath: $.assignments[*].id
+        contains: "{{assignmentId}}"
+      # (1) Declarative DB check on the join table — confirms the foreign keys
+      # (shipmentId/vehicleId/driverId) landed correctly, not just that the API said 200.
+      - db: primary
+        query: 'SELECT "vehicleId", "driverId", "shipmentId" FROM assignments WHERE id = ?'
+        params: ["{{assignmentId}}"]
+        expectRow:
+          vehicleId: "{{raceVehicleId}}"
+          driverId: "{{raceDriverId}}"
+          shipmentId: "{{shipmentId}}"

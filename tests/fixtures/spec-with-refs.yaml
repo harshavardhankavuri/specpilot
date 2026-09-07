@@ -1,0 +1,77 @@
+openapi: 3.0.3
+info:
+  title: Fixture API
+  version: "1.0"
+servers:
+  - url: https://api.fixture.example
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    Node:
+      type: object
+      properties:
+        id:
+          type: string
+        child:
+          $ref: "#/components/schemas/Node"
+    Booking:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        node:
+          $ref: "#/components/schemas/Node"
+paths:
+  /bookings/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getBookingById
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "404":
+          description: Not found
+  /bookings:
+    post:
+      operationId: createBooking
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pickupAddress:
+                  type: string
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+    # No operationId on purpose, to exercise synthesized-id fallback.
+    get:
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK

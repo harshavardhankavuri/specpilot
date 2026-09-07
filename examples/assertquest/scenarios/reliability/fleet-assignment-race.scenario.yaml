@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+name: fleet-assignment-race
+tags: [reliability, concurrency]
+auth: admin
+steps:
+  - custom: pickVehicleAndDriver
+
+  - name: create booking to assign
+    operation: post_api-booking
+    body:
+      origin:
+        label: "Warehouse A"
+        lat: 40.7128
+        lng: -74.0060
+      destination:
+        label: "Customer Site"
+        lat: 34.0522
+        lng: -118.2437
+      package:
+        weightKg: 12.5
+        lengthCm: 40
+        widthCm: 30
+        heightCm: 20
+    extract:
+      shipmentId: $.shipment.id
+    assert:
+      - status: 201
+
+  # Fires two concurrent PUT /api/fleet/assignments/{shipmentId} calls for the same
+  # shipment with different schedules, then verifies the stored result matches one
+  # write cleanly rather than a corrupted mix of both — see
+  # customSteps/fleetAssignmentRace.ts for why this needs Promise.all in a custom
+  # step rather than two sequential operation: steps.
+  - custom: raceAssignmentUpdate

@@ -1,0 +1,120 @@
+{
+	"SpecPilot: new scenario (steps flow)": {
+		"scope": "yaml",
+		"prefix": "sp-scenario",
+		"description": "Scaffold a *.scenario.yaml chained steps flow (one Playwright test). Assumes the file lives one directory under scenarios/ — fix the $schema path if nested deeper.",
+		"body": [
+			"# yaml-language-server: \\$schema=../../schemas/scenario.schema.json",
+			"name: ${1:scenario-name}",
+			"tags: [${2:tag}]",
+			"auth: ${3:authRoleName}",
+			"steps:",
+			"  - name: ${4:step description}",
+			"    operation: ${5:operationId}",
+			"    params:",
+			"      ${6:id}: \"{{${7:varName}}}\"",
+			"    body:",
+			"      ${8:field}: ${9:value}",
+			"    extract:",
+			"      ${10:extractedVar}: \\$.${11:jsonpath}",
+			"    assert:",
+			"      - status: ${12:200}",
+			"      - jsonpath: \\$.${13:field}",
+			"        equals: ${14:value}",
+			"$0"
+		]
+	},
+	"SpecPilot: new cases file": {
+		"scope": "yaml",
+		"prefix": "sp-cases",
+		"description": "Scaffold a *.cases.yaml with independent cases. Assumes the file lives one directory under scenarios/ — fix the $schema path if nested deeper.",
+		"body": [
+			"# yaml-language-server: \\$schema=../../schemas/scenario.schema.json",
+			"name: ${1:cases-name}",
+			"tags: [${2:tag}]",
+			"auth: ${3:authRoleName}",
+			"cases:",
+			"  - name: ${4:case description -> expected outcome}",
+			"    steps:",
+			"      - operation: ${5:operationId}",
+			"        assert:",
+			"          - status: ${6:200}",
+			"$0"
+		]
+	},
+	"SpecPilot: case entry": {
+		"scope": "yaml",
+		"prefix": "sp-case",
+		"description": "Add one independent case entry under an existing cases: list",
+		"body": [
+			"- name: ${1:case description -> expected outcome}",
+			"  steps:",
+			"    - operation: ${2:operationId}",
+			"      assert:",
+			"        - status: ${3:200}",
+			"$0"
+		]
+	},
+	"SpecPilot: step entry (operation)": {
+		"scope": "yaml",
+		"prefix": "sp-step",
+		"description": "Add one declarative operation step",
+		"body": [
+			"- name: ${1:step description}",
+			"  operation: ${2:operationId}",
+			"  params:",
+			"    ${3:id}: \"{{${4:varName}}}\"",
+			"  assert:",
+			"    - status: ${5:200}",
+			"$0"
+		]
+	},
+	"SpecPilot: step entry (custom)": {
+		"scope": "yaml",
+		"prefix": "sp-step-custom",
+		"description": "Add one custom step (calls a customSteps/*.ts export)",
+		"body": [
+			"- name: ${1:step description}",
+			"  custom: ${2:customStepExportName}",
+			"$0"
+		]
+	},
+	"SpecPilot: assert status": {
+		"scope": "yaml",
+		"prefix": "sp-assert-status",
+		"description": "Assert exact HTTP status",
+		"body": [
+			"- status: ${1:200}"
+		]
+	},
+	"SpecPilot: assert jsonpath": {
+		"scope": "yaml",
+		"prefix": "sp-assert-jsonpath",
+		"description": "Assert a jsonpath against the parsed JSON response body",
+		"body": [
+			"- jsonpath: \\$.${1:field}",
+			"  ${2|equals,contains,exists,matches,oneOf,minLength,maxLength,greaterThan,lessThan,greaterThanOrEqual,lessThanOrEqual|}: ${3:value}"
+		]
+	},
+	"SpecPilot: assert header": {
+		"scope": "yaml",
+		"prefix": "sp-assert-header",
+		"description": "Assert a response header's value",
+		"body": [
+			"- header: ${1:content-type}",
+			"  ${2|equals,contains,exists,matches,oneOf,minLength,maxLength|}: ${3:value}"
+		]
+	},
+	"SpecPilot: assert db": {
+		"scope": "yaml",
+		"prefix": "sp-assert-db",
+		"description": "Assert a row exists/matches via a live DB query (requires apitest.config.ts db.connections)",
+		"body": [
+			"- db: ${1:primary}",
+			"  query: \"SELECT ${2:column} FROM ${3:table} WHERE id = ?\"",
+			"  params: [\"{{${4:varName}}}\"]",
+			"  expectRow:",
+			"    ${2:column}: ${5:value}"
+		]
+	}
+}

@@ -1,0 +1,22 @@
+{
+  "name": "assertquest-example",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Worked apitest-framework example against the SwiftCargo API (https://assertquest.com/docs/json)",
+  "scripts": {
+    "apitest:sync": "apitest sync",
+    "apitest:check": "apitest check",
+    "apitest:run": "apitest run",
+    "apitest:drift": "apitest drift"
+  },
+  "dependencies": {
+    "apitest-framework": "file:../.."
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0",
+    "allure-commandline": "^2.32.0",
+    "allure-playwright": "^3.0.3",
+    "dotenv": "^16.4.5"
+  }
+}

@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../schemas/scenario.schema.json
+name: auth-me-permissions
+tags: [auth]
+auth: admin   # default for every case below; a case/step can override
+cases:
+  - name: no auth token -> 401
+    steps:
+      - operation: get_api-auth-me
+        auth: none
+        assert:
+          - status: 401
+
+  - name: valid auth -> 200 with the logged-in user's role
+    steps:
+      - operation: get_api-auth-me
+        assert:
+          - status: 200
+          - jsonpath: $.user.role
+            oneOf: ["admin", "dispatcher", "driver", "customer"]
+
+  - name: bogus bearer token -> 401
+    steps:
+      - operation: get_api-auth-me
+        headers:
+          Authorization: "Bearer not-a-real-token"
+        assert:
+          - status: 401
